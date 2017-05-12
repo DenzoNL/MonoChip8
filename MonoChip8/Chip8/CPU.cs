@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Microsoft.Xna.Framework.Content;
 
 namespace MonoChip8.Chip8
 {
@@ -201,7 +200,7 @@ namespace MonoChip8.Chip8
                             break;
 
                         case 0x5: // VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there isn't.
-                            VF = (byte)(VY > (0xFF - VX) ? 0 : 1); // if the result is larger than 255 (1 byte), set the carry flag to 1
+                            VF = (byte) (VX > VY ? 1 : 0);
                             VX -= VY;
                             PC += 2;
                             break;
@@ -269,12 +268,12 @@ namespace MonoChip8.Chip8
                         {
                             if ((pixel & (0x80 >> xline)) != 0)
                             {
-                                if (Graphics[VX + xline + (VY + yline) * 64] == 1)
+                                if (Graphics[VX + xline + ((VY + yline) * 64) % 2048] == 1)
                                 {
                                     VF = 1;
                                 }
 
-                                Graphics[VX + xline + ((VY + yline) * 64)] ^= 1;
+                                Graphics[VX + xline + ((VY + yline) * 64) % 2048] ^= 1;
                             }
                         }
                     }
@@ -376,7 +375,7 @@ namespace MonoChip8.Chip8
                             }
 
                             // On the original interpreter, when the operation is done, I = I + X + 1.
-                            I = (ushort)(I + X + 1);
+                           // I = (ushort)(I + X + 1);
 
                             PC += 2;
                             break;
@@ -388,7 +387,7 @@ namespace MonoChip8.Chip8
                             }
 
                             // On the original interpreter, when the operation is done, I = I + X + 1.
-                            I = (ushort)(I + X + 1);
+                            //I = (ushort)(I + X + 1);
 
                             PC += 2;
                             break;
@@ -402,7 +401,7 @@ namespace MonoChip8.Chip8
                     throw new Exception("Unknown Opcode: 0x" + OpCode.ToString("X4"));
             }
 
-            UpdateTimers();
+            //UpdateTimers();
         }
 
         /// <summary>
@@ -429,7 +428,7 @@ namespace MonoChip8.Chip8
         /// <summary>
         /// Updates the Delay and Sound timers
         /// </summary>
-        private void UpdateTimers()
+        public void UpdateTimers()
         {
             if (DelayTimer > 0)
             {

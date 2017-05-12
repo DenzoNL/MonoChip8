@@ -1,8 +1,5 @@
 ﻿using System.IO;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoChip8.Chip8;
@@ -30,7 +27,7 @@ namespace MonoChip8
             graphics.ApplyChanges();
 
             Chip8 = new CPU();
-            Chip8.LoadGame(Path.Combine(this.Content.RootDirectory, "Games/INVADERS"));
+            Chip8.LoadGame(Path.Combine(this.Content.RootDirectory, "Games/UFO"));
         }
 
         /// <summary>
@@ -83,44 +80,50 @@ namespace MonoChip8
             for (int i = 0; i < 14; i++)
             {
                 Chip8.Step();
-            }
+            
 
-            if (Chip8.DrawFlag)
-            {
-                Color[] data = new Color[64 * 32];
-                for (int y = 0; y < 32; ++y)
+                if (Chip8.DrawFlag)
                 {
-                    for (int x = 0; x < 64; ++x)
+                    Color[] data = new Color[64 * 32];
+                    for (int y = 0; y < 32; ++y)
                     {
-                        if (Chip8.Graphics[(y * 64) + x] == 0)
+                        for (int x = 0; x < 64; ++x)
                         {
-                            data[(y * 64) + x] = Color.Black;
-                        }
-                        else
-                        {
-                            data[(y * 64) + x] = Color.White;
+                            if (Chip8.Graphics[(y * 64) + x] == 0)
+                            {
+                                data[(y * 64) + x] = Color.Black;
+                            }
+                            else
+                            {
+                                data[(y * 64) + x] = Color.White;
+                            }
                         }
                     }
+                    canvas.SetData(data);
                 }
-                canvas.SetData(data);
+
+                Chip8.Key[0x1] = (byte) (Keyboard.GetState().IsKeyDown(Keys.D1) ? 1 : 0);
+                Chip8.Key[0x2] = (byte)(Keyboard.GetState().IsKeyDown(Keys.D2) ? 1 : 0);
+                Chip8.Key[0x3] = (byte)(Keyboard.GetState().IsKeyDown(Keys.D3) ? 1 : 0);
+                Chip8.Key[0xC] = (byte)(Keyboard.GetState().IsKeyDown(Keys.D4) ? 1 : 0);
+
+                Chip8.Key[0x4] = (byte)(Keyboard.GetState().IsKeyDown(Keys.Q) ? 1 : 0);
+                Chip8.Key[0x5] = (byte)(Keyboard.GetState().IsKeyDown(Keys.W) ? 1 : 0);
+                Chip8.Key[0x6] = (byte)(Keyboard.GetState().IsKeyDown(Keys.E) ? 1 : 0);
+                Chip8.Key[0xD] = (byte)(Keyboard.GetState().IsKeyDown(Keys.R) ? 1 : 0);
+
+                Chip8.Key[0x7] = (byte)(Keyboard.GetState().IsKeyDown(Keys.A) ? 1 : 0);
+                Chip8.Key[0x8] = (byte)(Keyboard.GetState().IsKeyDown(Keys.S) ? 1 : 0);
+                Chip8.Key[0x9] = (byte)(Keyboard.GetState().IsKeyDown(Keys.D) ? 1 : 0);
+                Chip8.Key[0xE] = (byte)(Keyboard.GetState().IsKeyDown(Keys.F) ? 1 : 0);
+
+                Chip8.Key[0xA] = (byte)(Keyboard.GetState().IsKeyDown(Keys.Z) ? 1 : 0);
+                Chip8.Key[0x0] = (byte)(Keyboard.GetState().IsKeyDown(Keys.X) ? 1 : 0);
+                Chip8.Key[0xB] = (byte)(Keyboard.GetState().IsKeyDown(Keys.C) ? 1 : 0);
+                Chip8.Key[0xF] = (byte)(Keyboard.GetState().IsKeyDown(Keys.V) ? 1 : 0);
             }
 
-            Chip8.Key[0x1] = (byte) (Keyboard.GetState().IsKeyDown(Keys.NumPad1) ? 1 : 0);
-            Chip8.Key[0x2] = (byte)(Keyboard.GetState().IsKeyDown(Keys.NumPad2) ? 1 : 0);
-            Chip8.Key[0x3] = (byte)(Keyboard.GetState().IsKeyDown(Keys.NumPad3) ? 1 : 0);
-            Chip8.Key[0xC] = (byte)(Keyboard.GetState().IsKeyDown(Keys.NumPad4) ? 1 : 0);
-            Chip8.Key[0x4] = (byte)(Keyboard.GetState().IsKeyDown(Keys.Q) ? 1 : 0);
-            Chip8.Key[0x5] = (byte)(Keyboard.GetState().IsKeyDown(Keys.W) ? 1 : 0);
-            Chip8.Key[0x6] = (byte)(Keyboard.GetState().IsKeyDown(Keys.E) ? 1 : 0);
-            Chip8.Key[0xD] = (byte)(Keyboard.GetState().IsKeyDown(Keys.R) ? 1 : 0);
-            Chip8.Key[0x7] = (byte)(Keyboard.GetState().IsKeyDown(Keys.A) ? 1 : 0);
-            Chip8.Key[0x8] = (byte)(Keyboard.GetState().IsKeyDown(Keys.S) ? 1 : 0);
-            Chip8.Key[0x9] = (byte)(Keyboard.GetState().IsKeyDown(Keys.D) ? 1 : 0);
-            Chip8.Key[0xE] = (byte)(Keyboard.GetState().IsKeyDown(Keys.F) ? 1 : 0);
-            Chip8.Key[0xA] = (byte)(Keyboard.GetState().IsKeyDown(Keys.Z) ? 1 : 0);
-            Chip8.Key[0x0] = (byte)(Keyboard.GetState().IsKeyDown(Keys.X) ? 1 : 0);
-            Chip8.Key[0xB] = (byte)(Keyboard.GetState().IsKeyDown(Keys.C) ? 1 : 0);
-            Chip8.Key[0xC] = (byte)(Keyboard.GetState().IsKeyDown(Keys.V) ? 1 : 0);
+            Chip8.UpdateTimers();
 
             base.Update(gameTime);
         }
