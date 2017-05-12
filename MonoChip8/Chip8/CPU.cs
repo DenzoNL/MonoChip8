@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using Microsoft.Xna.Framework.Content;
 
 namespace MonoChip8.Chip8
 {
@@ -70,6 +72,8 @@ namespace MonoChip8.Chip8
                 // For each byte in the Chip8Font array, store it in the Memory array, starting at 0.
                 Memory[i] = Chip8Font[i];
             }
+
+            DrawFlag = true;
         }
 
         #endregion
@@ -167,13 +171,19 @@ namespace MonoChip8.Chip8
                     switch (N)
                     {
                         // Sets VX to the value of VY
-                        case 0x1:
+                        case 0x0:
                             VX = VY;
                             PC += 2;
                             break;
 
-                        case 0x2: // Sets VX to VX or VY (Bitwise OR operation). VF is reset to 0.
+                        case 0x1: // Sets VX to VX or VY (Bitwise OR operation). VF is reset to 0.
                             VX |= VY;
+                            VF = 0;
+                            PC += 2;
+                            break;
+
+                        case 0x2: // Sets VX to VX and VY. (Bitwise AND operation) VF is reset to 0.
+                            VX &= VY;
                             VF = 0;
                             PC += 2;
                             break;
@@ -214,6 +224,7 @@ namespace MonoChip8.Chip8
                             PC += 2;
                             break;
 
+
                         default:
                             throw new Exception("Unknown Opcode: 0x" + OpCode.ToString("X4"));
                     }
@@ -249,30 +260,24 @@ namespace MonoChip8.Chip8
                 // I value doesn’t change after the execution of this instruction. 
                 // As described above, VF is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn, 
                 // and to 0 if that doesn’t happen. Code borrowed from http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
-                case 0xD000: 
+                case 0xD000:
                     VF = 0;
-
-                    for (var yline = 0; yline < N; yline++) // loop through each row of pixels
+                    for (int yline = 0; yline < N; yline++)
                     {
-                        ushort pixel = Memory[I + yline]; // get the pixel value
-
-                        for (var xline = 0; xline < 8; xline++)
+                        ushort pixel = Memory[I + yline];
+                        for (int xline = 0; xline < 7; xline++)
                         {
-                            if((pixel & (0x80 >> xline)) != 0)
+                            if ((pixel & (0x80 >> xline)) != 0)
                             {
-                                if (Graphics[(X + xline + ((Y + yline) * 64))] == 1)
+                                if (Graphics[VX + xline + (VY + yline) * 64] == 1)
                                 {
                                     VF = 1;
                                 }
-                                else
-                                {
-                                    Graphics[X + xline + ((Y + yline) * 64)] ^= 1;
-                                }
+
+                                Graphics[VX + xline + ((VY + yline) * 64)] ^= 1;
                             }
                         }
                     }
-
-                    DrawFlag = true;
                     PC += 2;
                     break;
 
@@ -396,6 +401,8 @@ namespace MonoChip8.Chip8
                 default:
                     throw new Exception("Unknown Opcode: 0x" + OpCode.ToString("X4"));
             }
+
+            UpdateTimers();
         }
 
         /// <summary>
@@ -405,7 +412,7 @@ namespace MonoChip8.Chip8
         {
             // Fetch the first byte, shift it left 8 bits, fetch the second byte and bitwise OR them together
             // And store them into memory.
-            OpCode = (ushort)(Memory[PC] << 8 | Memory[PC++]);
+            OpCode = (ushort)((Memory[PC] << 8) | Memory[PC + 1]);
         }
 
         /// <summary>
@@ -416,6 +423,46 @@ namespace MonoChip8.Chip8
             for (var i = 0; i < 2048; ++i)
             {
                 Graphics[i] = 0x0;
+            }
+        }
+
+        /// <summary>
+        /// Updates the Delay and Sound timers
+        /// </summary>
+        private void UpdateTimers()
+        {
+            if (DelayTimer > 0)
+            {
+                --DelayTimer;
+            }
+
+            if (SoundTimer > 0)
+            {
+                // Play a beeping sound when the soundtimer is being decremented to zero.
+                if (SoundTimer == 1)
+                {
+                    Console.WriteLine("Beep!");
+                }
+                --SoundTimer;
+            }
+        }
+
+        /// <summary>
+        /// Loads a game from the Games folder with the given name
+        /// </summary>
+        /// <param name="name"></param>
+        public void LoadGame(string name)
+        {
+            string filePath = name;
+
+            // Load ROM bytes into binaryreader.
+            var memoryStream = new MemoryStream(File.ReadAllBytes(filePath));
+            var binaryReader = new BinaryReader(memoryStream);
+
+            // Load ROM into memory at address 0x200 (512 bytes from 0)
+            for (var i = 0; i < binaryReader.BaseStream.Length; ++i)
+            {
+                Memory[i + 512] = binaryReader.ReadByte();
             }
         }
 
@@ -457,65 +504,80 @@ namespace MonoChip8.Chip8
         public ushort OpCode;
 
         /// <summary>
-        /// Returns the last three nibbles of the current OpCode
+        ///     Returns the last three nibbles of the current OpCode
         /// </summary>
-        public ushort NNN => (ushort) (OpCode & 0x0FFF);
+        public ushort NNN
+        {
+            get { return (ushort) (OpCode & 0x0FFF); }
+        }
 
         /// <summary>
-        /// Returns the last byte of the current opcode
+        ///     Returns the last byte of the current opcode
         /// </summary>
-        public byte NN => (byte) (OpCode & 0x00FF);
+        public byte NN
+        {
+            get { return (byte) (OpCode & 0x00FF); }
+        }
 
         /// <summary>
-        /// Gets the last nibble of the current opcode
+        ///     Gets the last nibble of the current opcode
         /// </summary>
-        public byte N => (byte) (OpCode & 0x000F);
+        public byte N
+        {
+            get { return (byte) (OpCode & 0x000F); }
+        }
 
         /// <summary>
-        /// Gets the second nibble of the current opcode.
+        ///     Gets the second nibble of the current opcode.
         /// </summary>
-        public byte X => (byte) ((OpCode & 0x0F00) >> 8);
+        public byte X
+        {
+            get { return (byte) ((OpCode & 0x0F00) >> 8); }
+        }
 
         /// <summary>
-        /// The last CPU register, also known as the carry flag.
+        ///     The last CPU register, also known as the carry flag.
         /// </summary>
         public byte V0
         {
-            get => V[0x0];
-            set => V[0x0] = value;
+            get { return V[0x0]; }
+            set { V[0x0] = value; }
         }
 
         /// <summary>
-        /// The last CPU register, also known as the carry flag.
+        ///     The last CPU register, also known as the carry flag.
         /// </summary>
         public byte VF
         {
-            get => V[0xF];
-            set => V[0xF] = value;
+            get { return V[0xF]; }
+            set { V[0xF] = value; }
         }
 
         /// <summary>
-        /// Shortcut variable for the V register corresponding to the X value in the opcode.
+        ///     Shortcut variable for the V register corresponding to the X value in the opcode.
         /// </summary>
         public byte VX
         {
-            get => V[X];
-            set => V[X] = value;
+            get { return V[X]; }
+            set { V[X] = value; }
         }
 
         /// <summary>
-        /// Shortcut variable for the V register corresponding to the Y value in the opcode.
+        ///     Shortcut variable for the V register corresponding to the Y value in the opcode.
         /// </summary>
         public byte VY
         {
-            get => V[Y];
-            set => V[Y] = value;
+            get { return V[Y]; }
+            set { V[Y] = value; }
         }
 
         /// <summary>
-        /// Gets the third nibble of the current opcode
+        ///     Gets the third nibble of the current opcode
         /// </summary>
-        public byte Y => (byte) ((OpCode & 0x00F0) >> 4);
+        public byte Y
+        {
+            get { return (byte) ((OpCode & 0x00F0) >> 4); }
+        }
 
         public byte[] Chip8Font =
         {
