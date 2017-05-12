@@ -13,7 +13,7 @@ namespace MonoChip8
         [STAThread]
         static void Main()
         {
-            using (var game = new Game1())
+            using (var game = new MonoChip8())
                 game.Run();
         }
     }

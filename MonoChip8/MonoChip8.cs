@@ -1,21 +1,26 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Reflection;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoChip8.Chip8;
 
 namespace MonoChip8
 {
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
-    public class Game1 : Game
+    public class MonoChip8 : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        private CPU Chip8;
         
-        public Game1()
+        public MonoChip8()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+
+            Chip8 = new CPU();
         }
 
         /// <summary>
@@ -62,7 +67,7 @@ namespace MonoChip8
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
+            Chip8.Step();
 
             base.Update(gameTime);
         }
